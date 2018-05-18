@@ -1,0 +1,146 @@
+.hide {
+  display: none;
+}
+
+.show {
+  display: block;
+}
+
+.title_box {
+  display: flex;
+  height: 70rpx;
+  justify-content: center;
+  margin-top: 20rpx;
+}
+
+.comment_list_box {
+  display: flex;
+  justify-content: center;
+}
+
+.comment_list {
+  display: flex;
+  width: 720rpx;
+  margin: 0 auto;
+  margin-top: 16rpx;
+  min-height: 0;
+  overflow: hidden;
+  padding-top: 25rpx;
+  padding-bottom: 25rpx;
+  border-bottom: 1px dashed #F1F1F1;
+}
+
+.comment_avatar {
+  width: 100rpx;
+  height: 100rpx;
+}
+.comment_avatar image{
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+}
+.comment_content_box {
+  display: flex;
+  flex-direction: column;
+  width: 590rpx;
+  font-size: 30rpx;
+  line-height: 50rpx;
+  margin-left: 25rpx;
+}
+
+.comment_meta {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-bottom: 10rpx;
+}
+.comment_nickname {
+  margin-right: 20rpx;
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #3F9F94;
+}
+
+.commnet_date {
+  font-size: 24rpx;
+  color: #8E8E8E;
+}
+
+.comment_content {
+  width: 100%;
+  color: #6F6F6F;
+}
+
+.no_comment {
+  color: #dadada;
+}
+
+.title_display {
+  width: 720rpx;
+  display: flex;
+  flex-direction: row;
+  padding-bottom: 2rpx;
+  border-bottom: 1px solid #F1F1F1;
+}
+
+.title_img {
+
+}
+
+.title_img image {
+  width: 60rpx;
+  height: 60rpx;
+}
+
+.title_text {
+  color: #3F9F94;
+  font-size: 38rpx;
+  line-height: 60rpx;
+  margin-left: 10rpx;
+}
+
+.comment_display {
+  width: 720rpx;
+  height: 300rpx;
+  box-sizing: border-box;
+  position: relative;
+  border: 1px solid #dadada;
+  margin: 20rpx auto 20rpx auto;
+  overflow: hidden;
+}
+
+.comment_textarea {
+  box-sizing: border-box;
+  position: relative;
+  margin: 2rpx auto 2rpx auto;
+  overflow: hidden;
+  width: 700rpx;
+  height: 220rpx;
+  border: 1px #dadada;
+  border-style: none none dashed none;
+}
+
+.comment_submit_display {
+  display: flex;
+  margin: 5rpx auto 5rpx auto;
+  width: 700rpx;
+}
+
+.comment_submit_tip {
+  width: 550rpx;
+  font-size: 22rpx;
+  height: 72rpx;
+  line-height: 100rpx;
+  margin: 2rpx auto 2rpx auto;
+}
+
+.markdown_tip {
+  color: #ee9a49;
+}
+
+.commit_submit_btn {
+  width: 150rpx;
+  height: 70rpx;
+  margin: 2rpx auto 2rpx auto;
+}

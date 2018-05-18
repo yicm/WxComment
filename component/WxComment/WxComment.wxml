@@ -1,0 +1,74 @@
+<!-- 评论列表标题栏 -->
+<view class="title_box">
+  <view class="title_display">
+    <view class="title_img">
+      <image src="./images/coffee.png"></image>
+    </view>
+    <view class="title_text">
+      <text>评论列表</text>
+    </view>
+  </view>
+</view>
+
+<!-- 显示评论列表 -->
+<view class="comment_list_box">
+  <view wx:if="{{comment_num > 0}}">
+    <view class="comment_list" wx:for="{{leancloud_comment_data}}" wx:key="username">
+      <view class="comment_avatar">
+        <image src="{{item.avatarUrl}}" />
+      </view>
+      <view class="comment_content_box">
+        <view>
+          <view class="comment_meta">
+            <view class="comment_nickname">
+              <text>{{item.nickName}}</text>
+            </view>
+            <view class="commnet_date">
+              <text>{{item.time}}</text>
+            </view>
+          </view>
+        </view>
+        <view class="comment_content">{{item.content}}</view>
+      </view>
+    </view>
+  </view>
+  <view wx:else>
+    <view class="no_comment">
+      <text>还没有人评论哦^_^</text>
+    </view>
+  </view>
+</view>
+
+<!-- 评论框标题栏 -->
+<view class="title_box">
+  <view class="title_display">
+    <view class="title_img">
+      <image src="./images/comment.png"></image>
+    </view>
+    <view class="title_text">
+      <text>发表评论</text>
+    </view>
+  </view>
+</view>
+
+<view>
+  <form bindsubmit="bindFormSubmit">
+    <view class="comment_display">
+      <textarea class="comment_textarea" placeholder="请输入你的评论^_^" name="comment_text" value="{{comment_data}}" />
+      <!-- 发布 -->
+      <view class=" {{show_aur_button?'hide':'show comment_submit_display'}}">
+        <view class="comment_submit_tip">
+          <text class="markdown_tip">{{tipOne}}</text>{{tipTwo}}
+        </view>
+        <button class="commit_submit_btn" type="primary" size="mini" plain="false" form-type="submit">{{submitBtnText}}</button>
+      </view>
+      <!-- 授权提示 -->
+      <view class=" {{show_aur_button?'show comment_submit_display':'hide'}}">
+        <view class="comment_submit_tip">
+          <text class="markdown_tip">授权提示：</text>请求获取您的用户头像和昵称。
+        </view>
+        <button class="commit_submit_btn" type="primary" size="mini" plain="false" open-type="getUserInfo" lang="zh_CN" bindgetuserinfo="onGotUserInfo">授权</button>
+      </view>
+    </view>
+  </form>
+</view>
