@@ -13,11 +13,11 @@
 <!-- 显示评论列表 -->
 <view class="comment_list_box">
   <view wx:if="{{comment_num > 0}}">
-    <view class="comment_list" wx:for="{{leancloud_comment_data}}" wx:key="username">
+    <view class="comment_list" wx:for="{{leancloud_comment_data}}" wx:key="{{item.id}}">
       <view class="comment_avatar">
         <image src="{{item.avatarUrl}}" />
       </view>
-      <view class="comment_content_box">
+      <view class="comment_content_box" bindlongpress='commentLongTap' data-comment_id='{{item.id}}' data-user_id='{{item.userId}}'>
         <view>
           <view class="comment_meta">
             <view class="comment_nickname">
