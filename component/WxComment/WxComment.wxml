@@ -22,10 +22,22 @@
           <view class="comment_meta">
             <view class="comment_nickname">
               <text>{{item.nickName}}</text>
+              <view class="commnet_date">
+                <text>{{item.time}}</text>
+              </view>
             </view>
-            <view class="commnet_date">
-              <text>{{item.time}}</text>
-            </view>
+            <block wx:if='{{item.zanCurrent}}'>
+              <view class="comment_zan" bindtap='zanCommentClick' data-comment_id='{{item.id}}' data-user_id='{{item.userId}}' data-zan_id='{{item.zanId}}'>
+                <image src="./images/zan_self.png"></image>
+                <text class="comment_zan_num" wx:if="{{item.zanNum > 0}}">{{item.zanNum}}</text>
+              </view>
+            </block>
+            <block wx:else>
+              <view class="comment_zan" bindtap='zanCommentClick' data-comment_id='{{item.id}}' data-user_id='{{item.userId}}' data-zan_id='{{item.zanId}}'>
+                <image src="./images/zan.png"></image>
+                <text class="comment_zan_num" wx:if="{{item.zanNum > 0}}">{{item.zanNum}}</text>
+              </view>
+            </block>
           </view>
         </view>
         <view class="comment_content">{{item.content}}</view>
@@ -67,7 +79,7 @@
         <view class="comment_submit_tip">
           <text class="markdown_tip">授权提示：</text>请求获取您的用户头像和昵称。
         </view>
-        <button class="commit_submit_btn" type="primary" size="mini" plain="false" open-type="getUserInfo" lang="zh_CN" bindgetuserinfo="onGotUserInfo">授权</button>
+        <button class="commit_submit_btn" type="primary" size="mini" plain="false" open-type="getUserInfo" lang="zh_CN" bindgetuserinfo="onGetUserInfo">授权</button>
       </view>
     </view>
   </form>
