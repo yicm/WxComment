@@ -17,7 +17,7 @@
       <view class="comment_avatar">
         <image src="{{item.avatarUrl}}" />
       </view>
-      <view class="comment_content_box" bindlongpress='commentLongTap' data-comment_id='{{item.id}}' data-user_id='{{item.userId}}'>
+      <view class="comment_content_box" bindlongpress='commentLongTap' data-comment_id='{{item.id}}' data-user_id='{{item.userId}}' data-zan_id='{{item.zanId}}'>
         <view>
           <view class="comment_meta">
             <view class="comment_nickname">

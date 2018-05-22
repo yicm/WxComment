@@ -1,6 +1,6 @@
 /*
- * author: yicm1102@gmail.com
- */
+* author: yicm1102@gmail.com
+*/
 
 const AV = require('../../libs/leancloud/av-weapp-min.js');
 // LeanCloud 应用的 ID 和 Key
@@ -27,8 +27,14 @@ Component({
       type: String,
       value: '',
       observer: function (newVal, oldVal) {
-        //console.log('observer...');
         var that = this;
+        // 文章阅读量和文章点赞统计和显示
+        // TODO
+        //var ArticleCount = AV.Object.extend('Count');
+        //var articlecount = new ArticleCount();
+        //articlecount.set('article_id', that.data.articleID);
+        
+        // 加载评论列表和评论点赞信息
         AV.User.loginWithWeapp().then(user => {
           that.data.leancloud_user_id = user.id;
           that.data.login_user_info = user.toJSON();
@@ -177,11 +183,38 @@ Component({
                 var todo = new AV.Object.createWithoutData('WxComment', e.currentTarget.dataset.comment_id);
                 todo.destroy().then(function (success) {
                   // 删除成功
-                  wx.showToast({
-                    title: '删除评论成功！',
-                    icon: 'success',
-                    duration: 2000
-                  })
+                  // 删除评论对应的点赞对象
+                  //console.log(e.currentTarget.dataset.zan_id)
+                  var zantodo = new AV.Object.createWithoutData('Zan', e.currentTarget.dataset.zan_id);
+                  zantodo.destroy().then(function(success){
+                    //删除评论对应赞成功
+                    wx.showToast({
+                      title: '删除评论成功！',
+                      icon: 'success',
+                      duration: 2000
+                    })
+                    // 同步本地显示
+                    var index;
+                    //console.log(that.data.leancloud_comment_data.length);
+                    for (var i = 0; i < that.data.leancloud_comment_data.length; i++) {
+                      if ((that.data.leancloud_comment_data[i].id).indexOf(e.currentTarget.dataset.comment_id) > -1) {
+                        index = i;
+                        that.data.leancloud_comment_data.splice(index, 1);
+                        break;
+                      }
+                    }
+                    that.setData({
+                      leancloud_comment_data: that.data.leancloud_comment_data,
+                      comment_num: that.data.leancloud_comment_data.length
+                    })
+                  }),function(error) {
+                    // 删除评论对应赞失败
+                    wx.showToast({
+                      title: '删除评论赞失败！',
+                      icon: 'none',
+                      duration: 2000
+                    })
+                  }
                 }, function (error) {
                   // 删除失败
                   wx.showToast({
@@ -190,20 +223,6 @@ Component({
                     duration: 2000
                   })
                 });
-                // 同步本地显示
-                var index;
-                console.log(that.data.leancloud_comment_data.length);
-                for (var i = 0; i < that.data.leancloud_comment_data.length; i++) {
-                  if ((that.data.leancloud_comment_data[i].id).indexOf(e.currentTarget.dataset.comment_id) > -1) {
-                    index = i;
-                    that.data.leancloud_comment_data.splice(index, 1);
-                    break;
-                  }
-                }
-                that.setData({
-                  leancloud_comment_data: that.data.leancloud_comment_data,
-                  comment_num: that.data.leancloud_comment_data.length
-                })
               }
               else {
                 wx.showToast({
@@ -371,6 +390,25 @@ Component({
           wxcomment.save().then(function (wxcomment) {
             // 评论和赞处理完毕
             // do something...
+            // 同步更新评论显示
+            // nickName/city/country/gender/province
+            var current_comment = {};
+            current_comment['id'] = wxcomment.id;
+            current_comment['userId'] = user.id;
+            current_comment['articleID'] = that.data.articleID;
+            current_comment['nickName'] = that.data.login_user_info.nickName;
+            current_comment['avatarUrl'] = that.data.login_user_info.avatarUrl;
+            current_comment['time'] = current_time;
+            current_comment['content'] = that.data.comment_data;
+            current_comment['at'] = '';
+            current_comment['zanNum'] = 0;
+            current_comment['zanId'] = zan.id;
+            that.data.leancloud_comment_data.push(current_comment);
+            that.setData({
+              leancloud_comment_data: that.data.leancloud_comment_data,
+              comment_num: that.data.comment_num + 1,
+              comment_data: ''
+            });
             console.log("评论和赞处理完毕");
           }), function (error) {
             wx.showToast({
@@ -393,24 +431,6 @@ Component({
           title: '评论成功！',
           icon: 'success',
           duration: 2000
-        });
-        // 同步更新评论显示
-        // nickName/city/country/gender/province
-        var current_comment = {};
-        current_comment['id'] = wxcomment.id;
-        current_comment['userId'] = user.id;
-        current_comment['articleID'] = that.data.articleID;
-        current_comment['nickName'] = that.data.login_user_info.nickName;
-        current_comment['avatarUrl'] = that.data.login_user_info.avatarUrl;
-        current_comment['time'] = current_time;
-        current_comment['content'] = that.data.comment_data;
-        current_comment['at'] = '';
-        current_comment['zanNum'] = 0;
-        that.data.leancloud_comment_data.push(current_comment);
-        that.setData({
-          leancloud_comment_data: that.data.leancloud_comment_data,
-          comment_num: that.data.comment_num + 1,
-          comment_data: ''
         });
       }, function (error) {
         // 异常处理
