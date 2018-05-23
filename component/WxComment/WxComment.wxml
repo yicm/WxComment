@@ -1,3 +1,21 @@
+<view class="views_box">
+  <view class="views_title_display">
+    <view class="views">
+      <image src="./images/views.png"></image>
+    </view>
+    <view class="views_text">
+      <text>{{article_views}}</text>
+    </view>
+  </view>
+</view>
+
+<!-- -------- ... -------- -->
+<view class="seg_line_box">
+  <view class="seg_line_left"></view>
+  <view class="seg_line_dot"></view>
+  <view class="seg_line_right"></view>
+</view>
+
 <!-- 评论列表标题栏 -->
 <view class="title_box">
   <view class="title_display">
@@ -66,7 +84,7 @@
 <view>
   <form bindsubmit="bindFormSubmit">
     <view class="comment_display">
-      <textarea class="comment_textarea" placeholder="请输入你的评论^_^" name="comment_text" value="{{comment_data}}" />
+      <textarea class="comment_textarea" placeholder="请输入你的评论^_^" name="comment_text" value="{{comment_textarea_value}}" />
       <!-- 发布 -->
       <view class=" {{show_aur_button?'hide':'show comment_submit_display'}}">
         <view class="comment_submit_tip">

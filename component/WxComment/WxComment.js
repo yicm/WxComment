@@ -1,7 +1,8 @@
 /*
 * author: yicm1102@gmail.com
+* github: https://github.com/yicm/WxComment
+* github_page: https://yicm.github.io
 */
-
 const AV = require('../../libs/leancloud/av-weapp-min.js');
 // LeanCloud 应用的 ID 和 Key
 AV.init({
@@ -29,10 +30,61 @@ Component({
       observer: function (newVal, oldVal) {
         var that = this;
         // 文章阅读量和文章点赞统计和显示
-        // TODO
-        //var ArticleCount = AV.Object.extend('Count');
-        //var articlecount = new ArticleCount();
-        //articlecount.set('article_id', that.data.articleID);
+        var count_query = new AV.Query('Count');
+        count_query.equalTo('article_id', that.data.articleID);
+        count_query.find().then(function (results) {
+          if(results.length == 1) {
+            var count_todo = AV.Object.createWithoutData('Count', results[0].id);
+            count_todo.save().then(function (count_todo) {
+              count_todo.increment('views', 1);
+              count_todo.fetchWhenSave(true);
+              return count_todo.save();
+            }).then(function (count_todo) {
+              // show
+              //console.log(count_todo);
+              //console.log(count_todo.attributes.views);
+              that.setData({
+                article_views: count_todo.attributes.views
+              });
+            }, function (error) {
+              // 异常处理
+              console.log(error);
+            });
+          }
+          else if(results.length == 0) {
+            var ArticleCount = AV.Object.extend('Count');
+            var articlecount = new ArticleCount();
+            articlecount.set('article_id', that.data.articleID);
+            articlecount.set('views', 1);
+            articlecount.set('zan', 0);
+            articlecount.save();
+            // show
+            that.setData({
+              article_views: 1
+            });
+          }
+          else {
+            console.log(that.data.articleID);
+            console.log("文章ID有重复，请检查！");
+          }
+        }, function (error) {
+          console.log(error.message);
+          console.log(error.code);
+          // https://leancloud.cn/docs/error_code.html#hash1444
+          // 第一次创建Count Class
+          if(error.code == 101) {
+            var ArticleCount = AV.Object.extend('Count');
+            var articlecount = new ArticleCount();
+            articlecount.set('article_id', that.data.articleID);
+            articlecount.set('views', 1);
+            articlecount.set('zan', 0);
+            articlecount.save();
+            // show
+            that.setData({
+              article_views: 1
+            });
+          }
+        });
         
         // 加载评论列表和评论点赞信息
         AV.User.loginWithWeapp().then(user => {
@@ -106,7 +158,8 @@ Component({
     leancloud_user_id: '',
     login_user_info: [],
     leancloud_comment_data: [],
-    leancloud_comment_zan_data: []
+    leancloud_comment_zan_data: [],
+    article_views: 0
   },
   methods: {
     // 事件响应函数
@@ -142,6 +195,10 @@ Component({
             });
           } else {
             console.log("已经授权获取用户信息，开始获取信息");
+            that.setData({
+              comment_textarea_value: ''
+            })
+
             wx.getUserInfo({
               success: function (res) {
                 that.setData({
@@ -305,7 +362,7 @@ Component({
     onGetUserInfo: function (e) {
       var that = this;
       if (e.detail.userInfo) {
-        console.log(e.detail.userInfo);
+        //console.log(e.detail.userInfo);
         wx.showToast({
           title: '授权成功！',
           icon: 'success',
@@ -407,7 +464,8 @@ Component({
             that.setData({
               leancloud_comment_data: that.data.leancloud_comment_data,
               comment_num: that.data.comment_num + 1,
-              comment_data: ''
+              comment_data: '',
+              comment_textarea_value: ''
             });
             console.log("评论和赞处理完毕");
           }), function (error) {
