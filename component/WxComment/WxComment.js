@@ -380,6 +380,85 @@ Component({
         }).catch(console.error);
       }
     },
+    avatarClicked: function(e) {
+      //console.log(e.currentTarget.dataset.user_id);
+      var that = this;
+      if (e.detail.userInfo) {
+        //console.log(e.detail.userInfo);
+        // 查阅是否已经关注该用户
+        var query = AV.User.current().followeeQuery();
+        //query.include('followee');
+        var targetFollower = AV.Object.createWithoutData('_Followee', e.currentTarget.dataset.user_id);
+        query.equalTo('followee', targetFollower);
+        query.find().then(function (followees) {
+          //关注的用户列表 followees
+          //console.log(followees);
+          if(followees.length == 1) {
+            //已经关注了该用户，是否取关
+            wx.showModal({
+              title: '提示',
+              content: '已关注，是否取消关注该用户？',
+              success: function (res) {
+                if (res.confirm) {
+                  AV.User.current().unfollow(e.currentTarget.dataset.user_id).then(function () {
+                    //取消关注成功
+                    wx.showToast({
+                      title: '取消关注成功！',
+                      icon: 'success',
+                      duration: 2000
+                    });
+                    return ;
+                  }, function (err) {
+                    //取消关注失败
+                    console.log(err);
+                    return ;
+                  });
+                }
+                else if(res.cancel) {
+                  // nothing to do
+                  return ;
+                }
+              }
+            });
+          } else {
+            // 处理关注
+            wx.showModal({
+              title: '提示',
+              content: '关注该用户？',
+              success: function (res) {
+                if (res.confirm) {
+                  AV.User.current().follow(e.currentTarget.dataset.user_id).then(function () {
+                    //关注成功
+                    // https://leancloud.cn/docs/status_system.html#hash918332471
+                    // TODO: 取消关注
+                    wx.showToast({
+                      title: '关注成功！',
+                      icon: 'success',
+                      duration: 2000
+                    })
+                  }, function (err) {
+                    //关注失败
+                    //console.log(err.message);
+                    //console.log(err.code);
+                    wx.showToast({
+                      title: err.message,
+                      icon: 'none',
+                      duration: 4000
+                    })
+                  });
+                } else if (res.cancel) {
+                  //console.log('用户点击取消')
+                }
+              }
+            })
+          }
+        }, function (err) {
+          //查询失败
+          console.log('查询失败');
+          console.log(err);
+        });    
+      }
+    },
     _updateUserInfoInLeanCloud: function () {
       // 获得当前登录用户
       const user = AV.User.current();

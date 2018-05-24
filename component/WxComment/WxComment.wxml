@@ -32,9 +32,11 @@
 <view class="comment_list_box">
   <view wx:if="{{comment_num > 0}}">
     <view class="comment_list" wx:for="{{leancloud_comment_data}}" wx:key="{{item.id}}">
-      <view class="comment_avatar">
-        <image src="{{item.avatarUrl}}" />
-      </view>
+      <button class="avatar_button" bindgetuserinfo='avatarClicked' open-type="getUserInfo" lang="zh_CN" data-user_id='{{item.userId}}'>
+        <view class="comment_avatar">
+          <image src="{{item.avatarUrl}}" />
+        </view>
+      </button>
       <view class="comment_content_box" bindlongpress='commentLongTap' data-comment_id='{{item.id}}' data-user_id='{{item.userId}}' data-zan_id='{{item.zanId}}'>
         <view>
           <view class="comment_meta">

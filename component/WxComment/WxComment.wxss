@@ -41,6 +41,16 @@
   border-radius: 50%;
 }
 
+.avatar_button {
+  background: none;
+  border: none;
+}
+
+.avatar_button::after {
+  border: none;
+  outline: none;
+}
+
 .comment_content_box {
   display: flex;
   flex-direction: column;
@@ -133,6 +143,7 @@
   color: #bfbfbf;
   font-size: 25rpx;
   margin-left: 10rpx;
+  line-height: 30rpx;
 }
 
 .seg_line_box {
