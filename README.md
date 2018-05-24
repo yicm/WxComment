@@ -1,6 +1,6 @@
 # WxComment
 
-`WxComment`是一个微信小程序的评论插件，结合BaaS提供商[LeanCloud](https://leancloud.cn/)，无需其他另外的个人或者云服务器，就可以免费使用。解决了需要个人去注册域名、备案、购买云服务器的繁杂问题。
+`WxComment`[https://github.com/yicm/WxComment](https://github.com/yicm/WxComment)是一个微信小程序的评论插件，结合BaaS提供商[LeanCloud](https://leancloud.cn/)，无需其他另外的个人或者云服务器，就可以免费使用。解决了需要个人去注册域名、备案、购买云服务器的繁杂问题。
 
 
 # 特色
