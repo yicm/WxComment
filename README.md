@@ -59,6 +59,14 @@ test.wxml
 </view>
 ```
 
+test.json
+
+```
+"usingComponents": {
+    "WxComment": "/component/WxComment/WxComment"
+}
+```
+
 WxComment组件属性说明：
 
 ```bash
