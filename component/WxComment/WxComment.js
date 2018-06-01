@@ -4,6 +4,7 @@
 * github_page: https://yicm.github.io
 */
 const AV = require('../../libs/leancloud/av-weapp-min.js');
+var Common = require('../../libs/scripts/common.js');
 // LeanCloud 应用的 ID 和 Key
 AV.init({
   appId: 'your leancloud appid',
@@ -29,6 +30,7 @@ Component({
       value: '',
       observer: function (newVal, oldVal) {
         var that = this;
+
         wx.showLoading({
           title: '加载中',
         })
@@ -39,6 +41,7 @@ Component({
         var count_query = new AV.Query('Count');
         count_query.equalTo('article_id', that.data.articleID);
         count_query.find().then(function (results) {
+          // 阅读量统计对象一文章对应一对象
           if (results.length == 1) {
             var count_todo = AV.Object.createWithoutData('Count', results[0].id);
             count_todo.save().then(function (count_todo) {
@@ -129,7 +132,7 @@ Component({
               item['nickName'] = results[i].attributes.targetUser.attributes.nickName;
               item['avatarUrl'] = results[i].attributes.targetUser.attributes.avatarUrl;
               item['content'] = results[i].attributes.content;
-              item['time'] = results[i].attributes.time;
+              item['time'] = Common.timeAgoWithTimeStr(results[i].attributes.time);
               item['at'] = results[i].attributes.at;
 
               that.data.leancloud_comment_data.push(item);
@@ -483,25 +486,6 @@ Component({
         }
       });
     },
-    _getTime: function () {
-      //获取当前时间戳  
-      var timestamp = Date.parse(new Date());
-      var n = timestamp;
-      var date = new Date(n);
-      //年  
-      var Y = date.getFullYear();
-      //月  
-      var M = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1);
-      //日  
-      var D = date.getDate() < 10 ? '0' + date.getDate() : date.getDate();
-      //时  
-      var h = date.getHours();
-      //分  
-      var m = date.getMinutes();
-      //秒  
-      var s = date.getSeconds();
-      return Y + '-' + M + '-' + D + ' ' + h + ":" + m + ":" + s;
-    },
     // 自定义方法
     _writeCommentInLeanCloud: function () {
       var that = this;
@@ -509,7 +493,7 @@ Component({
       var WxComment = AV.Object.extend('WxComment');
       var wxcomment = new WxComment();
 
-      var current_time = that._getTime();
+      var current_time = Common.getTime();
       const user = AV.User.current();
       //console.log(that.data.login_user_info);
       wxcomment.set('username', that.data.login_user_info.username);
@@ -541,7 +525,7 @@ Component({
             current_comment['articleID'] = that.data.articleID;
             current_comment['nickName'] = that.data.login_user_info.nickName;
             current_comment['avatarUrl'] = that.data.login_user_info.avatarUrl;
-            current_comment['time'] = current_time;
+            current_comment['time'] = Common.timeAgoWithTimeStr(current_time);
             current_comment['content'] = that.data.comment_data;
             current_comment['at'] = '';
             current_comment['zanNum'] = 0;
