@@ -1,12 +1,3 @@
-function convertDateFromString(dateString) {
-  if (dateString) {
-    var arr1 = dateString.split(" ");
-    var sdate = arr1[0].split('-');
-    var date = new Date(sdate[0], sdate[1] - 1, sdate[2]);
-    return date;
-  }
-}
-
 const padWithZeros = (vNumber, width) => {
   var numAsString = vNumber.toString();
   while (numAsString.length < width) {
@@ -26,7 +17,7 @@ const dateFormat = (date) => {
 }
 
 const timeAgoWithTimeStr = (dateString) => {
-  var date = convertDateFromString(dateString)
+  var date = new Date(dateString)
 
   try {
     var oldTime = date.getTime();
@@ -61,7 +52,7 @@ const timeAgoWithTimeStr = (dateString) => {
     }
   } catch (error) {
     console.log(error)
-  }  
+  }
 }
 
 const timeAgo = (date) => {
