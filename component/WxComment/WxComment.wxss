@@ -1,3 +1,12 @@
+image, video {
+  width: 100%;
+  margin: 0 auto 20rpx auto;
+}
+
+image {
+  height: auto;
+}
+
 .hide {
   display: none;
 }
@@ -44,6 +53,8 @@
 .avatar_button {
   background: none;
   border: none;
+  padding: 1rpx 5rpx 1rpx 1rpx;
+  margin: 5rpx 5rpx 0rpx 5rpx;
 }
 
 .avatar_button::after {
@@ -54,7 +65,7 @@
 .comment_content_box {
   display: flex;
   flex-direction: column;
-  width: 590rpx;
+  width: 600rpx;
   font-size: 30rpx;
   line-height: 50rpx;
   margin-left: 25rpx;
@@ -122,28 +133,31 @@
   height: 30rpx;
   justify-content: center;
   margin-top: 25rpx;
+  margin-bottom: 10rpx;
 }
 
-.views_title_display{
-  width: 720rpx;
+.views_title_display {
   display: flex;
   flex-direction: row;
+  width: 720rpx;
   padding-bottom: 2rpx;
 }
 
-.views{
+.views_image {
 }
 
-.views image {
-  width: 30rpx;
-  height: 30rpx;
+.views_image image {
+  width: 35rpx;
+  height: 35rpx;
 }
 
 .views_text {
+  width: 35rpx;
+  height: 35rpx;
   color: #bfbfbf;
-  font-size: 25rpx;
+  font-size: 22rpx;
+  line-height: 35rpx;
   margin-left: 10rpx;
-  line-height: 30rpx;
 }
 
 .seg_line_box {
@@ -155,19 +169,19 @@
 
 .seg_line_left {
   width: 325rpx;
-  border-bottom: 1rpx solid #E1E1E1;
+  border-bottom: 1rpx solid #e1e1e1;
 }
 
 .seg_line_dot {
   width: 50rpx;
-  border-bottom: 5rpx dotted #DBDBDB;
+  border-bottom: 5rpx dotted #dbdbdb;
   margin-left: 10rpx;
   margin-right: 10rpx;
 }
 
 .seg_line_right {
   width: 325rpx;
-  border-bottom: 1rpx solid #E1E1E1;
+  border-bottom: 1rpx solid #e1e1e1;
 }
 
 .title_img image {

@@ -1,6 +1,6 @@
 <view class="views_box">
   <view class="views_title_display">
-    <view class="views">
+    <view class="views_image">
       <image src="./images/views.png"></image>
     </view>
     <view class="views_text">

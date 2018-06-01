@@ -29,11 +29,17 @@ Component({
       value: '',
       observer: function (newVal, oldVal) {
         var that = this;
+        wx.showLoading({
+          title: '加载中',
+        })
+        setTimeout(function () {
+          wx.hideLoading()
+        }, 3000)
         // 文章阅读量和文章点赞统计和显示
         var count_query = new AV.Query('Count');
         count_query.equalTo('article_id', that.data.articleID);
         count_query.find().then(function (results) {
-          if(results.length == 1) {
+          if (results.length == 1) {
             var count_todo = AV.Object.createWithoutData('Count', results[0].id);
             count_todo.save().then(function (count_todo) {
               count_todo.increment('views', 1);
@@ -51,7 +57,7 @@ Component({
               console.log(error);
             });
           }
-          else if(results.length == 0) {
+          else if (results.length == 0) {
             var ArticleCount = AV.Object.extend('Count');
             var articlecount = new ArticleCount();
             articlecount.set('article_id', that.data.articleID);
@@ -72,7 +78,7 @@ Component({
           console.log(error.code);
           // https://leancloud.cn/docs/error_code.html#hash1444
           // 第一次创建Count Class
-          if(error.code == 101) {
+          if (error.code == 101) {
             var ArticleCount = AV.Object.extend('Count');
             var articlecount = new ArticleCount();
             articlecount.set('article_id', that.data.articleID);
@@ -85,7 +91,7 @@ Component({
             });
           }
         });
-        
+
         // 加载评论列表和评论点赞信息
         AV.User.loginWithWeapp().then(user => {
           that.data.leancloud_user_id = user.id;
@@ -94,7 +100,7 @@ Component({
           var query = new AV.Query('WxComment');
           query.equalTo('article_id', that.data.articleID);
           // descending:降序/ascending:升序
-          query.descending('updateAt');
+          query.ascending('updatedAt');
           // 同时查询包含对象Pointer的详细信息
           query.include('targetUser');
           query.include('targetZan');
@@ -133,6 +139,7 @@ Component({
               leancloud_comment_data: that.data.leancloud_comment_data,
               comment_num: results.length
             });
+            wx.hideLoading();
           }).catch(console.error);
         }, function (error) {
           wx.showToast({
@@ -243,7 +250,7 @@ Component({
                   // 删除评论对应的点赞对象
                   //console.log(e.currentTarget.dataset.zan_id)
                   var zantodo = new AV.Object.createWithoutData('Zan', e.currentTarget.dataset.zan_id);
-                  zantodo.destroy().then(function(success){
+                  zantodo.destroy().then(function (success) {
                     //删除评论对应赞成功
                     wx.showToast({
                       title: '删除评论成功！',
@@ -264,7 +271,7 @@ Component({
                       leancloud_comment_data: that.data.leancloud_comment_data,
                       comment_num: that.data.leancloud_comment_data.length
                     })
-                  }),function(error) {
+                  }), function (error) {
                     // 删除评论对应赞失败
                     wx.showToast({
                       title: '删除评论赞失败！',
@@ -380,7 +387,7 @@ Component({
         }).catch(console.error);
       }
     },
-    avatarClicked: function(e) {
+    avatarClicked: function (e) {
       //console.log(e.currentTarget.dataset.user_id);
       var that = this;
       if (e.detail.userInfo) {
@@ -393,7 +400,7 @@ Component({
         query.find().then(function (followees) {
           //关注的用户列表 followees
           //console.log(followees);
-          if(followees.length == 1) {
+          if (followees.length == 1) {
             //已经关注了该用户，是否取关
             wx.showModal({
               title: '提示',
@@ -407,16 +414,16 @@ Component({
                       icon: 'success',
                       duration: 2000
                     });
-                    return ;
+                    return;
                   }, function (err) {
                     //取消关注失败
                     console.log(err);
-                    return ;
+                    return;
                   });
                 }
-                else if(res.cancel) {
+                else if (res.cancel) {
                   // nothing to do
-                  return ;
+                  return;
                 }
               }
             });
@@ -456,7 +463,7 @@ Component({
           //查询失败
           console.log('查询失败');
           console.log(err);
-        });    
+        });
       }
     },
     _updateUserInfoInLeanCloud: function () {
