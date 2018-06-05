@@ -25,11 +25,28 @@ Component({
       type: String,
       value: '回复'
     },
+    textMaxLength: {
+      type: Number,
+      value: 300
+    },
     articleID: {
       type: String,
       value: '',
       observer: function (newVal, oldVal) {
         var that = this;
+        // 定义内部Promise相关函数
+        function promiseGetSubComment(index, p_id) {
+          return new Promise(function (resolve, reject) {
+            var sub_query = new AV.Query('WxSubComment');
+            sub_query.ascending('updatedAt');
+            sub_query.include('targetUser');
+            sub_query.include('targetZan');
+            sub_query.equalTo('p_id', p_id)
+            sub_query.find().then(function (sub_comments) {
+              resolve([index, p_id, sub_comments]);
+            })
+          });
+        }
 
         wx.showLoading({
           title: '加载中',
@@ -95,6 +112,7 @@ Component({
           }
         });
 
+        // 完成阅读量统计查询，Then...
         // 加载评论列表和评论点赞信息
         AV.User.loginWithWeapp().then(user => {
           that.data.leancloud_user_id = user.id;
@@ -103,20 +121,24 @@ Component({
           var query = new AV.Query('WxComment');
           query.equalTo('article_id', that.data.articleID);
           // descending:降序/ascending:升序
-          query.ascending('updatedAt');
+          query.ascending('createdAt');
           // 同时查询包含对象Pointer的详细信息
           query.include('targetUser');
           query.include('targetZan');
+          query.include('subCommentList');
           query.find().then(function (results) {
+            //console.log(results);
             // 处理初次加载的评论
+            var promiseFuncArr = [];
             for (var i = 0; i < results.length; i++) {
               var item = {};
+              item['p_index'] = i;
+              item['p_id'] = results[i].id;
               item['id'] = results[i].id;
               item['userId'] = results[i].attributes.targetUser.id;
               item['zanId'] = results[i].attributes.targetZan.id;
-
+              // 赞list
               var zanUserList = results[i].attributes.targetZan.attributes.userList;
-
               item['zanCurrent'] = false;
               for (var j = 0; j < zanUserList.length; j++) {
                 if (zanUserList[j] == that.data.leancloud_user_id) {
@@ -130,18 +152,76 @@ Component({
               item['zanNum'] = results[i].attributes.targetZan.attributes.zan;
               item['articleID'] = results[i].attributes.article_id;
               item['nickName'] = results[i].attributes.targetUser.attributes.nickName;
+              item['pre_' + item['id']] = item['nickName'];
               item['avatarUrl'] = results[i].attributes.targetUser.attributes.avatarUrl;
               item['content'] = results[i].attributes.content;
               item['time'] = Common.timeAgoWithTimeStr(results[i].attributes.time);
               item['at'] = results[i].attributes.at;
 
-              that.data.leancloud_comment_data.push(item);
+              item['subCommentList'] = [];
+              if (results[i].attributes.subCommentList.length > 0) {
+                that.data.leancloud_comment_data.push(item);
+                promiseFuncArr.push(promiseGetSubComment(i, results[i].id));
+              } else {
+                that.data.leancloud_comment_data.push(item);
+              }
+            } // end for results
+
+            var p = Promise.resolve();
+            for (var x = 0; x <= promiseFuncArr.length; x++) {
+              (function (x) {
+                p = p.then(function (data) {
+                  // 第一次data为空promise，undefined
+                  // 开始处理子评论
+                  if (x > 0) {
+                    var p_index = data[0];
+                    var p_id = data[1];
+                    var sub_comments = data[2];
+                    for (var k = 0; k < sub_comments.length; k++) {
+                      var sub_item = {}
+                      sub_item['p_index'] = p_index;
+                      sub_item['p_id'] = p_id;
+                      sub_item['id'] = sub_comments[k].id;
+                      sub_item['userId'] = sub_comments[k].attributes.targetUser.id;
+                      sub_item['zanId'] = sub_comments[k].attributes.targetZan.id;
+                      // 子评论赞list
+                      var subzanUserList = sub_comments[k].attributes.targetZan.attributes.userList;
+                      sub_item['zanCurrent'] = false;
+                      for (var m = 0; m < subzanUserList.length; m++) {
+                        if (subzanUserList[m] == that.data.leancloud_user_id) {
+                          sub_item['zanCurrent'] = true;
+                          break;
+                        } else {
+                          sub_item['zanCurrent'] = false;
+                        }
+                      }
+                      sub_item['zanNum'] = sub_comments[k].attributes.targetZan.attributes.zan;
+                      sub_item['articleID'] = sub_comments[k].attributes.article_id;
+                      sub_item['nickName'] = sub_comments[k].attributes.targetUser.attributes.nickName;
+                      sub_item['pre_' + sub_item['id']] = sub_item['nickName'];
+                      sub_item['avatarUrl'] = sub_comments[k].attributes.targetUser.attributes.avatarUrl;
+                      sub_item['content'] = sub_comments[k].attributes.content;
+                      sub_item['time'] = Common.timeAgoWithTimeStr(sub_comments[k].attributes.time);
+                      sub_item['at'] = sub_comments[k].attributes.at;
+                      that.data.leancloud_comment_data[p_index].subCommentList.push(sub_item)
+                    } // end for subcoments
+                  } // end if
+                  if (x == promiseFuncArr.length) {
+                    //console.log('finished')
+                    that.setData({
+                      leancloud_comment_data: that.data.leancloud_comment_data,
+                      comment_num: that.data.leancloud_comment_data.length
+                    });
+                    return null;
+                  }
+                  // 当x为length时，return promiseFuncArr[x]()后，循环退出，
+                  // 没有then方法获取promiseFuncArr[x]()的回调
+                  // 因此多循环一次
+                  return promiseFuncArr[x];
+                });
+              })(x)
             }
-            //console.log(that.data.leancloud_comment_data);
-            that.setData({
-              leancloud_comment_data: that.data.leancloud_comment_data,
-              comment_num: results.length
-            });
+
             wx.hideLoading();
           }).catch(console.error);
         }, function (error) {
@@ -160,6 +240,10 @@ Component({
     }
   },
   data: {
+    textarea_focus: false,
+    is_sub_comment: false,
+    sub_comment_p_comment_id: '',
+    sub_comment_p_index: -1,
     comment_id: "",
     comment_data: "",
     comment_num: 0,
@@ -189,6 +273,17 @@ Component({
       //console.log(that.data.articleID);
       that.data.comment_id = that.data.articleID; ''
       that.data.comment_data = e.detail.value.comment_text;
+
+      // 双重判断是否是子评论
+      if (that.data.is_sub_comment) {
+        // 再通过文本内容是否含有@字符判断
+        if (that.data.comment_data.charAt(0) == '@') {
+          // Done
+        }
+        else {
+          that.data.is_sub_comment = false
+        }
+      }
 
       // 获取用户信息
       wx.getSetting({
@@ -224,7 +319,14 @@ Component({
                   that._updateUserInfoInLeanCloud();
                   // 写入评论
                   // 写入并更新显示评论
-                  that._writeCommentInLeanCloud();
+                  if (that.data.is_sub_comment) {
+                    // 子评论
+                    that._writeSubCommentInLeanCloud();
+                    that.data.is_sub_comment = false;
+                  }
+                  else {
+                    that._writeCommentInLeanCloud();
+                  }
                 }).catch(console.error);
               }
             })
@@ -234,6 +336,32 @@ Component({
         }
       })
 
+    },
+    commentTextTap: function (e) {
+      //console.log('commentTextTap')
+      // 子评论
+      var that = this;
+      var parent_comment_id = e.currentTarget.dataset.p_comment_id;
+      var user_id = e.currentTarget.dataset.user_id;
+      var comment_id = e.currentTarget.dataset.comment_id;
+      var nickname = e.currentTarget.dataset.nickname;
+      var p_index = e.currentTarget.dataset.p_index;
+
+      //console.log(p_index)
+      //console.log(parent_comment_id)
+
+      that.setData({
+        comment_textarea_value: '@' + nickname + ' ',
+        textarea_focus: true,
+      })
+
+      that.data.is_sub_comment = true;
+      that.data.sub_comment_p_comment_id = parent_comment_id;
+      that.data.sub_comment_p_index = p_index;
+      // 使页面滚动到底部
+      wx.pageScrollTo({
+        scrollTop: 10000
+      })
     },
     commentLongTap: function (e) {
       var that = this;
@@ -246,6 +374,28 @@ Component({
             // 长按删除评论
             AV.User.loginWithWeapp().then(user => {
               if (user.id == e.currentTarget.dataset.user_id) {
+                // 如果该评论下有子评论
+                // 1.可以删除父评论和所有子评论？2.还是只能所以子评论删除完毕后才可以删除？
+                // Done 1
+                var p_index = e.currentTarget.dataset.p_index;
+                if (that.data.leancloud_comment_data[p_index].subCommentList.length > 0) {
+                  // 父评论下有子评论
+                  wx.showModal({
+                    title: '提示',
+                    content: '父评论下有子评论，无法删除！',
+                    showCancel: false,
+                    success: function (res) {
+                      if (res.confirm) {
+                        console.log('用户点击确定')
+                        // nothing to do
+                      } else if (res.cancel) {
+                        console.log('用户点击取消')
+                      }
+                    }
+                  })
+                  return;
+                }
+
                 //console.log('当前登陆用户与待删除评论用户id相同');
                 var todo = new AV.Object.createWithoutData('WxComment', e.currentTarget.dataset.comment_id);
                 todo.destroy().then(function (success) {
@@ -254,7 +404,7 @@ Component({
                   //console.log(e.currentTarget.dataset.zan_id)
                   var zantodo = new AV.Object.createWithoutData('Zan', e.currentTarget.dataset.zan_id);
                   zantodo.destroy().then(function (success) {
-                    //删除评论对应赞成功
+                    // 删除评论对应赞成功
                     wx.showToast({
                       title: '删除评论成功！',
                       icon: 'success',
@@ -270,6 +420,17 @@ Component({
                         break;
                       }
                     }
+                    // 更新p_id for all comments
+                    for (var i = 0; i < that.data.leancloud_comment_data.length; i++) {
+                      // update
+                      if (i >= index) {
+                        that.data.leancloud_comment_data[i].p_index = that.data.leancloud_comment_data[i].p_index - 1;
+                        for (var j = 0; j < that.data.leancloud_comment_data[i].subCommentList.length; j++) {
+                          that.data.leancloud_comment_data[i].subCommentList[j].p_index = that.data.leancloud_comment_data[i].subCommentList[j].p_index - 1;
+                        }
+                      }
+                    }
+
                     that.setData({
                       leancloud_comment_data: that.data.leancloud_comment_data,
                       comment_num: that.data.leancloud_comment_data.length
@@ -305,29 +466,120 @@ Component({
         }
       })
     },
-    _updateZanShow: function (mode, comment_id) {
+    subCommentLongTap: function (e) {
       var that = this;
-      for (var i = 0; i < that.data.leancloud_comment_data.length; i++) {
-        if (that.data.leancloud_comment_data[i].id == comment_id) {
-          if (mode == 'cancel') {
-            that.data.leancloud_comment_data[i].zanNum = that.data.leancloud_comment_data[i].zanNum - 1;
-            that.data.leancloud_comment_data[i].zanCurrent = false;
+      wx.showModal({
+        title: '提示',
+        content: '确定删除该评论吗？',
+        success: function (res) {
+          if (res.confirm) {
+            //console.log('用户点击确定')
+            // 长按删除评论
+            AV.User.loginWithWeapp().then(user => {
+              if (user.id == e.currentTarget.dataset.user_id) {
+                //console.log('当前登陆用户与待删除评论用户id相同');
+                var todo = new AV.Object.createWithoutData('WxSubComment', e.currentTarget.dataset.comment_id);
+                todo.destroy().then(function (success) {
+                  // 删除成功
+                  // 删除评论对应的点赞对象
+                  //console.log(e.currentTarget.dataset.zan_id)
+                  var zantodo = new AV.Object.createWithoutData('SubZan', e.currentTarget.dataset.zan_id);
+                  zantodo.destroy().then(function (success) {
+                    // 删除评论对应赞成功
+                    // 删除父评论WxComment中subCommentList信息
+                    var op_str = "update WxComment set subCommentList=op('Remove', {'objects':[pointer('WxSubComment','" + e.currentTarget.dataset.comment_id + "')]}) where objectId='" + e.currentTarget.dataset.p_comment_id + "'";
+                    AV.Query.doCloudQuery(op_str).then(function (data) {
+                      // 同步本地显示
+                      var index;
+                      //console.log(that.data.leancloud_comment_data.length);
+                      for (var i = 0; i < that.data.leancloud_comment_data[e.currentTarget.dataset.p_index].subCommentList.length; i++) {
+                        if ((that.data.leancloud_comment_data[e.currentTarget.dataset.p_index].subCommentList[i].id).indexOf(e.currentTarget.dataset.comment_id) > -1) {
+                          index = i;
+                          that.data.leancloud_comment_data[e.currentTarget.dataset.p_index].subCommentList.splice(index, 1);
+                          break;
+                        }
+                      }
+                      that.setData({
+                        leancloud_comment_data: that.data.leancloud_comment_data
+                      })
+                      wx.showToast({
+                        title: '删除子评论成功！',
+                        icon: 'success',
+                        duration: 2000
+                      })
+                    }, function (error) {
+                      // 异常处理
+                      console.error(error);
+                    });
+
+                  }), function (error) {
+                    // 删除评论对应赞失败
+                    wx.showToast({
+                      title: '删除评论赞失败！',
+                      icon: 'none',
+                      duration: 2000
+                    })
+                  }
+                }, function (error) {
+                  // 删除失败
+                  wx.showToast({
+                    title: '删除评论失败！',
+                    icon: 'none',
+                    duration: 2000
+                  })
+                });
+              }
+              else {
+                wx.showToast({
+                  title: '无权删除其他用户评论！',
+                  icon: 'none',
+                  duration: 2000
+                })
+              }
+            }).catch(console.error);
+          } else if (res.cancel) {
+            //console.log('用户点击取消')
           }
-          else if (mode == 'submit') {
-            that.data.leancloud_comment_data[i].zanNum = that.data.leancloud_comment_data[i].zanNum + 1;
-            that.data.leancloud_comment_data[i].zanCurrent = true;
+        }
+      })
+    },
+    _updateZanShow: function (mode, comment_id, is_sub_comment, p_index) {
+      var that = this;
+      
+      if (is_sub_comment == "true") {
+        for (var i = 0; i < that.data.leancloud_comment_data[p_index].subCommentList.length; i++) {
+          if (that.data.leancloud_comment_data[p_index].subCommentList[i].id == comment_id) {
+            if (mode == 'cancel') {
+              that.data.leancloud_comment_data[p_index].subCommentList[i].zanNum = that.data.leancloud_comment_data[p_index].subCommentList[i].zanNum - 1;
+              that.data.leancloud_comment_data[p_index].subCommentList[i].zanCurrent = false;
+            }
+            else if (mode == 'submit') {
+              that.data.leancloud_comment_data[p_index].subCommentList[i].zanNum = that.data.leancloud_comment_data[p_index].subCommentList[i].zanNum + 1;
+              that.data.leancloud_comment_data[p_index].subCommentList[i].zanCurrent = true;
+            }
+
+            break;
           }
-          break;
+        }
+      }
+      else {
+        if (mode == 'cancel') {
+          that.data.leancloud_comment_data[p_index].zanNum = that.data.leancloud_comment_data[p_index].zanNum - 1;
+          that.data.leancloud_comment_data[p_index].zanCurrent = false;
+        }
+        else if (mode == 'submit') {
+          that.data.leancloud_comment_data[p_index].zanNum = that.data.leancloud_comment_data[p_index].zanNum + 1;
+          that.data.leancloud_comment_data[p_index].zanCurrent = true;
         }
       }
       that.setData({
         leancloud_comment_data: that.data.leancloud_comment_data
       })
     },
-    _writeZanInLeanCloud: function (user_id, comment_id, zan_id) {
+    _writeZanInLeanCloud: function (user_id, comment_id, zan_id, class_name, is_sub_comment, p_index) {
       var that = this;
       // 查询当前用户是否已点赞
-      var query = new AV.Query('Zan');
+      var query = new AV.Query(class_name);
       var search = [that.data.leancloud_user_id];
       query.equalTo('commentObjId', comment_id);
       query.containsAll('userList', search);
@@ -335,12 +587,12 @@ Component({
         //console.log(results);      
         if (results.length == 1) {
           // 当前用户已给该评论点赞，取消赞
-          var op_str = "update Zan set zan=op('Decrement', {'amount': 1}),userList=op('Remove', {'objects':[\"" + that.data.leancloud_user_id + "\"]}) where objectId='" + zan_id + "'";
+          var op_str = "update " + class_name + " set zan=op('Decrement', {'amount': 1}),userList=op('Remove', {'objects':[\"" + that.data.leancloud_user_id + "\"]}) where objectId='" + zan_id + "'";
           AV.Query.doCloudQuery(op_str).then(function (data) {
             // data 中的 results 是本次查询返回的结果，AV.Object 实例列表
             // 更新显示, -1
             //console.log('update zan cancel');
-            that._updateZanShow('cancel', comment_id);
+            that._updateZanShow('cancel', comment_id, is_sub_comment, p_index);
           }, function (error) {
             // 异常处理
             console.error(error);
@@ -348,12 +600,12 @@ Component({
         }
         else {
           // 当前用户还未给该评论点赞
-          var op_str = "update Zan set zan=op('Increment', {'amount': 1}),userList=op('AddUnique', {'objects':[\"" + that.data.leancloud_user_id + "\"]}) where objectId='" + zan_id + "'";
+          var op_str = "update " + class_name + " set zan=op('Increment', {'amount': 1}),userList=op('AddUnique', {'objects':[\"" + that.data.leancloud_user_id + "\"]}) where objectId='" + zan_id + "'";
           AV.Query.doCloudQuery(op_str).then(function (data) {
             // data 中的 results 是本次查询返回的结果，AV.Object 实例列表
             // 更新显示
             //console.log('update zan submit');
-            that._updateZanShow('submit', comment_id);
+            that._updateZanShow('submit', comment_id, is_sub_comment, p_index);
           }, function (error) {
             // 异常处理
             console.error(error);
@@ -367,7 +619,14 @@ Component({
       var user_id = e.currentTarget.dataset.user_id;
       var comment_id = e.currentTarget.dataset.comment_id;
       var zan_id = e.currentTarget.dataset.zan_id;
-      that._writeZanInLeanCloud(user_id, comment_id, zan_id);
+      var p_index = e.currentTarget.dataset.p_index;
+
+      var class_name = "Zan";
+      if (e.currentTarget.dataset.is_sub_comment == "true") {
+        class_name = "SubZan";
+      }
+
+      that._writeZanInLeanCloud(user_id, comment_id, zan_id, class_name, e.currentTarget.dataset.is_sub_comment, p_index);
     },
     onGetUserInfo: function (e) {
       var that = this;
@@ -401,17 +660,17 @@ Component({
         var targetFollower = AV.Object.createWithoutData('_Followee', e.currentTarget.dataset.user_id);
         query.equalTo('followee', targetFollower);
         query.find().then(function (followees) {
-          //关注的用户列表 followees
+          // 关注的用户列表 followees
           //console.log(followees);
           if (followees.length == 1) {
-            //已经关注了该用户，是否取关
+            // 已经关注了该用户，是否取关
             wx.showModal({
               title: '提示',
               content: '已关注，是否取消关注该用户？',
               success: function (res) {
                 if (res.confirm) {
                   AV.User.current().unfollow(e.currentTarget.dataset.user_id).then(function () {
-                    //取消关注成功
+                    // 取消关注成功
                     wx.showToast({
                       title: '取消关注成功！',
                       icon: 'success',
@@ -419,7 +678,7 @@ Component({
                     });
                     return;
                   }, function (err) {
-                    //取消关注失败
+                    // 取消关注失败
                     console.log(err);
                     return;
                   });
@@ -438,7 +697,7 @@ Component({
               success: function (res) {
                 if (res.confirm) {
                   AV.User.current().follow(e.currentTarget.dataset.user_id).then(function () {
-                    //关注成功
+                    // 关注成功
                     // https://leancloud.cn/docs/status_system.html#hash918332471
                     // TODO: 取消关注
                     wx.showToast({
@@ -447,7 +706,7 @@ Component({
                       duration: 2000
                     })
                   }, function (err) {
-                    //关注失败
+                    // 关注失败
                     //console.log(err.message);
                     //console.log(err.code);
                     wx.showToast({
@@ -463,7 +722,7 @@ Component({
             })
           }
         }, function (err) {
-          //查询失败
+          // 查询失败
           console.log('查询失败');
           console.log(err);
         });
@@ -486,6 +745,88 @@ Component({
         }
       });
     },
+    _writeSubCommentInLeanCloud: function () {
+      var that = this;
+      // new WxSubComment
+      var WxSubComment = AV.Object.extend('WxSubComment');
+      var wxsubcomment = new WxSubComment();
+
+      var current_time = Common.getTime();
+      const user = AV.User.current();
+      //console.log(that.data.login_user_info);
+      wxsubcomment.set('p_id', that.data.sub_comment_p_comment_id)
+      wxsubcomment.set('username', that.data.login_user_info.username);
+      wxsubcomment.set('article_id', that.data.comment_id);
+      wxsubcomment.set('content', that.data.comment_data);
+      wxsubcomment.set('time', current_time);
+      wxsubcomment.set('at', '');
+      var targetUser = AV.Object.createWithoutData('_User', user.id);
+      wxsubcomment.set('targetUser', targetUser);
+
+      wxsubcomment.save().then(function (wxsubcomment) {
+        // new Zan
+        var Zan = AV.Object.extend('SubZan');
+        var zan = new Zan();
+        zan.set('zan', 0);
+        zan.set('commentObjId', wxsubcomment.id);
+        zan.set('userList', []);
+        zan.save().then(function (zan) {
+          var targetZan = AV.Object.createWithoutData('SubZan', zan.id);
+          wxsubcomment.set('targetZan', targetZan);
+          wxsubcomment.save().then(function (wxsubcomment) {
+            console.log('子评论和赞处理完毕')
+            // 子评论和赞处理完毕
+            // 将子评论加入到父评论索引数组中
+            // WxComment添加子评论objectId
+            var op_str = "update WxComment set subCommentList=op('AddUnique', {'objects':[pointer('WxSubComment','" + wxsubcomment.id + "')]}) where objectId='" + that.data.sub_comment_p_comment_id + "'";
+            AV.Query.doCloudQuery(op_str).then(function (data) {
+              console.log('子评论和赞及父评论处理完毕')
+              // data 中的 results 是本次查询返回的结果，AV.Object 实例列表
+              // 同步更新子评论和相关初赞显示
+              // nickName/city/country/gender/province
+              //console.log(that.data.sub_comment_p_index)
+              var current_comment = {};
+              current_comment['p_index'] = that.data.sub_comment_p_index;
+              current_comment['p_id'] = that.data.sub_comment_p_comment_id;
+              current_comment['id'] = wxsubcomment.id;
+              current_comment['userId'] = user.id;
+              current_comment['articleID'] = that.data.articleID;
+              current_comment['nickName'] = that.data.login_user_info.nickName;
+              current_comment['pre_' + current_comment['id']] = current_comment['nickName'];
+              current_comment['avatarUrl'] = that.data.login_user_info.avatarUrl;
+              current_comment['time'] = Common.timeAgoWithTimeStr(current_time);
+              current_comment['content'] = that.data.comment_data;
+              current_comment['at'] = '';
+              current_comment['zanNum'] = 0;
+              current_comment['zanId'] = zan.id;
+              //console.log(that.data.leancloud_comment_data[that.data.sub_comment_p_index]['subCommentList'])
+              that.data.leancloud_comment_data[that.data.sub_comment_p_index].subCommentList.push(current_comment);
+              // 子评论不增加commnet_num
+              that.setData({
+                leancloud_comment_data: that.data.leancloud_comment_data,
+                comment_data: '',
+                comment_textarea_value: ''
+              });
+              console.log("评论和赞显示处理完毕");
+            }, function (error) {
+              // 异常处理
+              console.error(error);
+            });
+          }), function (error) {
+            console.log('子评论初始化赞失败！')
+            console.log(error)
+          }
+        }), function (error) {
+          // 异常处理
+          console.log('赞初始化失败！')
+          console.log(error)
+        }
+      }, function (error) {
+        // 异常处理
+        console.log('子评论初始化失败')
+        console.log(error)
+      });
+    },
     // 自定义方法
     _writeCommentInLeanCloud: function () {
       var that = this;
@@ -501,6 +842,7 @@ Component({
       wxcomment.set('content', that.data.comment_data);
       wxcomment.set('time', current_time);
       wxcomment.set('at', '');
+      wxcomment.set('subCommentList', []);
       var targetUser = AV.Object.createWithoutData('_User', user.id);
       wxcomment.set('targetUser', targetUser);
 
@@ -520,16 +862,20 @@ Component({
             // 同步更新评论显示
             // nickName/city/country/gender/province
             var current_comment = {};
+            current_comment['p_index'] = that.data.leancloud_comment_data.length;
+            current_comment['p_id'] = wxcomment.id;
             current_comment['id'] = wxcomment.id;
             current_comment['userId'] = user.id;
             current_comment['articleID'] = that.data.articleID;
             current_comment['nickName'] = that.data.login_user_info.nickName;
+            current_comment['pre_' + current_comment['id']] = current_comment['nickName'];
             current_comment['avatarUrl'] = that.data.login_user_info.avatarUrl;
             current_comment['time'] = Common.timeAgoWithTimeStr(current_time);
             current_comment['content'] = that.data.comment_data;
             current_comment['at'] = '';
             current_comment['zanNum'] = 0;
             current_comment['zanId'] = zan.id;
+            current_comment['subCommentList'] = [];
             that.data.leancloud_comment_data.push(current_comment);
             that.setData({
               leancloud_comment_data: that.data.leancloud_comment_data,
@@ -575,7 +921,7 @@ Component({
     query.equalTo('article_id', this.data.articleID);
     query.find().then(function (results) {
       // 如果这样写，第二个条件将覆盖第一个条件，查询只会返回 priority = 1 的结果
-      console.log(results);
+      //console.log(results);
     }, function (error) {
       wx.showToast({
         title: '评论加载失败！',
@@ -585,11 +931,11 @@ Component({
     });
   },
   _articleIDChange: function (newVal, oldVal) {
-    //[BUG] observer无法进入自定义函数
+    // [BUG] observer无法进入自定义函数
     console.log('observer...');
     //newVal == this.data.articleID
-    //加载LeanCloud对应articleID评论
-    console.log(this.data.articleID);
+    // 加载LeanCloud对应articleID评论
+    //console.log(this.data.articleID);
     this._getCommentsInLeanCloud();
   },
   created: function () {

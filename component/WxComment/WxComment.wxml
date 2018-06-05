@@ -24,21 +24,26 @@
     </view>
     <view class="title_text">
       <text>评论列表</text>
+      <block wx:if="{{comment_num > 0}}">
+        <text>，共{{comment_num}}条评论</text>
+      </block>
     </view>
   </view>
 </view>
 
 <!-- 显示评论列表 -->
 <view class="comment_list_box">
-  <view wx:if="{{comment_num > 0}}">
+  <view wx:if="{{leancloud_comment_data.length > 0}}">
     <view class="comment_list" wx:for="{{leancloud_comment_data}}" wx:key="{{item.id}}">
       <button class="avatar_button" bindgetuserinfo='avatarClicked' open-type="getUserInfo" lang="zh_CN" data-user_id='{{item.userId}}'>
         <view class="comment_avatar">
           <image src="{{item.avatarUrl}}" />
         </view>
       </button>
-      <view class="comment_content_box" bindlongpress='commentLongTap' data-comment_id='{{item.id}}' data-user_id='{{item.userId}}' data-zan_id='{{item.zanId}}'>
-        <view>
+      <!-- 评论昵称/日期/内容/赞-->
+      <view class="comment_total_box">
+        <!-- 父评论 -->
+        <view class="comment_content_box">
           <view class="comment_meta">
             <view class="comment_nickname">
               <text>{{item.nickName}}</text>
@@ -47,20 +52,54 @@
               </view>
             </view>
             <block wx:if='{{item.zanCurrent}}'>
-              <view class="comment_zan" bindtap='zanCommentClick' data-comment_id='{{item.id}}' data-user_id='{{item.userId}}' data-zan_id='{{item.zanId}}'>
+              <view class="comment_zan" bindtap='zanCommentClick' data-comment_id='{{item.id}}' data-user_id='{{item.userId}}' data-zan_id='{{item.zanId}}' data-is_sub_comment='false' data-p_index="{{item.p_index}}">
                 <image src="./images/zan_self.png"></image>
                 <text class="comment_zan_num" wx:if="{{item.zanNum > 0}}">{{item.zanNum}}</text>
               </view>
             </block>
             <block wx:else>
-              <view class="comment_zan" bindtap='zanCommentClick' data-comment_id='{{item.id}}' data-user_id='{{item.userId}}' data-zan_id='{{item.zanId}}'>
+              <view class="comment_zan" bindtap='zanCommentClick' data-comment_id='{{item.id}}' data-user_id='{{item.userId}}' data-zan_id='{{item.zanId}}' data-is_sub_comment='false' data-p_index="{{item.p_index}}">
                 <image src="./images/zan.png"></image>
                 <text class="comment_zan_num" wx:if="{{item.zanNum > 0}}">{{item.zanNum}}</text>
               </view>
             </block>
           </view>
+          <view class="comment_content" bindtap='commentTextTap' bindlongpress='commentLongTap' data-comment_id='{{item.id}}' data-user_id='{{item.userId}}' data-zan_id='{{item.zanId}}' data-p_comment_id='{{item.p_id}}' data-nickname="{{item.nickName}}" data-p_index="{{item.p_index}}">{{item.content}}</view>
         </view>
-        <view class="comment_content">{{item.content}}</view>
+        <!-- 子评论 -->
+        <view class="sub_comment_list_box" wx:if="{{item.subCommentList.length > 0}}">
+          <view class="sub_comment_display_box" wx:for="{{item.subCommentList}}" wx:for-item="sub_item" wx:key="id">
+            <button class="avatar_button" bindgetuserinfo='avatarClicked' open-type="getUserInfo" lang="zh_CN" data-user_id='{{sub_item.userId}}'>
+              <view class="comment_avatar">
+                <image src="{{sub_item.avatarUrl}}" />
+              </view>
+            </button>
+            <view class="sub_comment_box">
+              <view class="comment_meta">
+                <view class="comment_nickname">
+                  <text>{{sub_item.nickName}}</text>
+                  <view class="commnet_date">
+                    <text>{{sub_item.time}}</text>
+                  </view>
+                </view>
+                <block wx:if='{{sub_item.zanCurrent}}'>
+                  <view class="comment_zan" bindtap='zanCommentClick' data-comment_id='{{sub_item.id}}' data-user_id='{{sub_item.userId}}' data-zan_id='{{sub_item.zanId}}' data-is_sub_comment='true' data-p_index="{{sub_item.p_index}}">
+                    <image src="./images/zan_self.png"></image>
+                    <text class="comment_zan_num" wx:if="{{sub_item.zanNum > 0}}">{{sub_item.zanNum}}</text>
+                  </view>
+                </block>
+                <block wx:else>
+                  <view class="comment_zan" bindtap='zanCommentClick' data-comment_id='{{sub_item.id}}' data-user_id='{{sub_item.userId}}' data-zan_id='{{sub_item.zanId}}' data-is_sub_comment='true' data-p_index="{{sub_item.p_index}}">
+                    <image src="./images/zan.png"></image>
+                    <text class="comment_zan_num" wx:if="{{sub_item.zanNum > 0}}">{{sub_item.zanNum}}</text>
+                  </view>
+                </block>
+              </view>
+              <view class="comment_content" bindtap='commentTextTap' bindlongpress='subCommentLongTap' data-comment_id='{{sub_item.id}}' data-user_id='{{sub_item.userId}}' data-zan_id='{{sub_item.zanId}}' data-p_comment_id='{{sub_item.p_id}}' data-nickname="{{sub_item.nickName}}"
+                data-p_index="{{sub_item.p_index}}">{{sub_item.content}}</view>
+            </view>
+          </view>
+        </view>
       </view>
     </view>
   </view>
@@ -86,7 +125,7 @@
 <view>
   <form bindsubmit="bindFormSubmit">
     <view class="comment_display">
-      <textarea class="comment_textarea" placeholder="请输入你的评论^_^" name="comment_text" value="{{comment_textarea_value}}" />
+      <textarea class="comment_textarea" placeholder="请输入你的评论^_^" name="comment_text" value="{{comment_textarea_value}}" maxlength='{{textMaxLength}}' focus='{{textarea_focus}}' />
       <!-- 发布 -->
       <view class=" {{show_aur_button?'hide':'show comment_submit_display'}}">
         <view class="comment_submit_tip">
