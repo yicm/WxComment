@@ -18,6 +18,8 @@
 - 支持点击头像关注用户功能
     - 对发布高质量文章的用户关注（见微信小程序`小白AI`）
     - 关注后，可通过在WxComment组件外对用户详细资料查看等操作(见微信小程序`小白AI`)
+- 支持评论消息订阅功能
+    - 评论指定文章或页面后，会自动订阅该文章或页面的评论，当有新的评论则可以实现消息更新，提示已有新的评论。
 
 
 # 屏幕截图
@@ -76,13 +78,15 @@ tipOne: 颜色显示tip区域文字内容
 tipTwo: 无颜色显示tip区域文字内容
 submitBtnText：提交按钮文字内容，默认为“回复”
 textMaxLength: 评论最大文字长度限制，默认300
-articleID：文章与WxComment绑定的唯一ID
+articleID：文章或页面与WxComment绑定的唯一ID
+articleTitle: 文章或页面标题，默认值为空
+articleURL: 文章或页面的访问链接，默认值为空
 contentLen：评论内容至少为多长限制，默认为1
 ```
 
 # Demo
 
-小程序`小白AI`博客引用WxComment组件示例：
+小程序`小白AI`博客引用WxComment组件示例，评论消息订阅可见`我的`->`消息`：
 
 ![](https://raw.githubusercontent.com/yicm/WxComment/master/screenshot/xiaobaiai.jpg)
 

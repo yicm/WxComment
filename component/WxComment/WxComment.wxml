@@ -68,7 +68,7 @@
         </view>
         <!-- 子评论 -->
         <view class="sub_comment_list_box" wx:if="{{item.subCommentList.length > 0}}">
-          <view class="sub_comment_display_box" wx:for="{{item.subCommentList}}" wx:for-item="sub_item" wx:key="id">
+          <view class="sub_comment_display_box" wx:for="{{item.subCommentList}}" wx:for-item="sub_item" wx:key="{{sub_item.id}}">
             <button class="avatar_button" bindgetuserinfo='avatarClicked' open-type="getUserInfo" lang="zh_CN" data-user_id='{{sub_item.userId}}'>
               <view class="comment_avatar">
                 <image src="{{sub_item.avatarUrl}}" />

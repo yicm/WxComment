@@ -7,8 +7,8 @@ const AV = require('../../libs/leancloud/av-weapp-min.js');
 var Common = require('../../libs/scripts/common.js');
 // LeanCloud 应用的 ID 和 Key
 AV.init({
-  appId: 'your leancloud appid',
-  appKey: 'your leancloud appkey',
+  appId: 'your app id',
+  appKey: 'your app key',
 });
 
 Component({
@@ -29,16 +29,25 @@ Component({
       type: Number,
       value: 300
     },
+    articleTitle: {
+      type: String,
+      value: ''
+    },
+    articleURL: {
+      type: String,
+      value: ''
+    },
     articleID: {
       type: String,
       value: '',
       observer: function (newVal, oldVal) {
+        console.log(this.data.articleID);
         var that = this;
         // 定义内部Promise相关函数
         function promiseGetSubComment(index, p_id) {
           return new Promise(function (resolve, reject) {
             var sub_query = new AV.Query('WxSubComment');
-            sub_query.ascending('updatedAt');
+            sub_query.ascending('createdAt');
             sub_query.include('targetUser');
             sub_query.include('targetZan');
             sub_query.equalTo('p_id', p_id)
@@ -77,7 +86,8 @@ Component({
               console.log(error);
             });
           }
-          else if (results.length == 0) {
+          else if (results.length == 0) {            
+            // 初始化文章统计对象
             var ArticleCount = AV.Object.extend('Count');
             var articlecount = new ArticleCount();
             articlecount.set('article_id', that.data.articleID);
@@ -88,6 +98,14 @@ Component({
             that.setData({
               article_views: 1
             });
+            // 初始化文章评论计数
+            var ArticleCommentCount = AV.Object.extend('WxCommentCount');
+            var articlecommentcount = new ArticleCommentCount();
+            articlecommentcount.set('article_id', that.data.articleID);
+            articlecommentcount.set('article_title', that.data.articleTitle);
+            articlecommentcount.set('article_url', that.data.articleURL);
+            articlecommentcount.set('count', 0);
+            articlecommentcount.save();
           }
           else {
             console.log(that.data.articleID);
@@ -128,6 +146,7 @@ Component({
           query.include('subCommentList');
           query.find().then(function (results) {
             //console.log(results);
+            that.data.all_comment_num = results.length;
             // 处理初次加载的评论
             var promiseFuncArr = [];
             for (var i = 0; i < results.length; i++) {
@@ -160,6 +179,7 @@ Component({
 
               item['subCommentList'] = [];
               if (results[i].attributes.subCommentList.length > 0) {
+                that.data.all_comment_num = that.data.all_comment_num + results[i].attributes.subCommentList.length;
                 that.data.leancloud_comment_data.push(item);
                 promiseFuncArr.push(promiseGetSubComment(i, results[i].id));
               } else {
@@ -208,6 +228,8 @@ Component({
                   } // end if
                   if (x == promiseFuncArr.length) {
                     //console.log('finished')
+                    console.log(that.data.all_comment_num);
+                    // 显示所有评论
                     that.setData({
                       leancloud_comment_data: that.data.leancloud_comment_data,
                       comment_num: that.data.leancloud_comment_data.length
@@ -239,14 +261,16 @@ Component({
       value: 1
     }
   },
-  data: {
+  data: {    
     textarea_focus: false,
     is_sub_comment: false,
     sub_comment_p_comment_id: '',
     sub_comment_p_index: -1,
-    comment_id: "",
+    article_id: "",
+    comment_count_id: "",
     comment_data: "",
     comment_num: 0,
+    all_comment_num: 0,
     show_aur_button: false,
     user_info: [],
     leancloud_user_id: '',
@@ -271,7 +295,7 @@ Component({
       }
 
       //console.log(that.data.articleID);
-      that.data.comment_id = that.data.articleID; ''
+      that.data.article_id = that.data.articleID;
       that.data.comment_data = e.detail.value.comment_text;
 
       // 双重判断是否是子评论
@@ -363,6 +387,81 @@ Component({
         scrollTop: 10000
       })
     },
+    _writeCommentSubscribeInLeanCloud: function() {
+      var that = this;
+      // 评论订阅
+      const user = AV.User.current();
+      // 先判断评论订阅Class里面是否已有当前用户ID
+      var query = new AV.Query('WxCommentSubscribe');
+      query.equalTo('user_id', user.id);
+      query.find().then(function (results) {
+        //console.log(results);
+        if(results.length == 1) {
+          var op_str = "update WxCommentSubscribe set comment_count_array=op('AddUnique', {'objects':[pointer('WxCommentCount','" + that.data.comment_count_id + "')]}) where objectId='" + results[0].id + "'";
+          AV.Query.doCloudQuery(op_str).then(function (data) {
+            console.log('更新评论订阅成功');
+          }, function (error) {
+            // 异常处理
+            console.error(error);
+          });
+        } 
+        else if(results.length > 1){
+          console.log('WxCommentSubscribe ID重复')
+        }
+        else{
+          console.log('评论订阅还未有该用户')
+          console.log(results.length)
+          var ArticleCommentSubscribe = AV.Object.extend('WxCommentSubscribe');
+          var articlecommentsubscribe = new ArticleCommentSubscribe();
+          // writeCommentCountInLeanCloud必须先执行
+          var comment_count_obj = AV.Object.createWithoutData('WxCommentCount', that.data.comment_count_id);
+          articlecommentsubscribe.addUnique('comment_count_array', [comment_count_obj]);
+          articlecommentsubscribe.set('user_id', user.id);
+          articlecommentsubscribe.save();
+        }
+      }, function (error) {
+        console.log(error);
+        console.log(error.code)
+        // 101: 查询的 Class 不存在
+        if(error.code == 101) {
+          console.log(that.data.comment_count_id);
+          var ArticleCommentSubscribe = AV.Object.extend('WxCommentSubscribe');
+          var articlecommentsubscribe = new ArticleCommentSubscribe();
+          // writeCommentCountInLeanCloud必须先执行
+          var comment_count_obj = AV.Object.createWithoutData('WxCommentCount', that.data.comment_count_id);
+          articlecommentsubscribe.addUnique('comment_count_array', [comment_count_obj]);
+          articlecommentsubscribe.set('user_id', user.id);
+          articlecommentsubscribe.save();
+        }
+      });
+    },
+    _writeCommentCountInLeanCloud: function() {
+      // 更新评论计数
+      var that = this;
+      //console.log('开始更新评论计数');
+      var commentcount_query = new AV.Query('WxCommentCount');
+      commentcount_query.equalTo('article_id', that.data.articleID);
+      commentcount_query.find().then(function (results) {
+        //console.log(results.length)
+        if (results.length == 1) {
+          var todo = AV.Object.createWithoutData('WxCommentCount', results[0].id);
+          todo.set('count', that.data.all_comment_num);
+          todo.save().then(function(todo){
+            that.data.comment_count_id = todo.id;
+            // 更新用户评论订阅,count增加和减少都触发订阅
+            that._writeCommentSubscribeInLeanCloud();
+          }) 
+        }
+        else if (results.length > 1) {
+          console.log("WxCommentCount有重复ID");
+        }
+        else {
+          console.log("还未创建WxCommentCount对象")
+        }
+      }, function (error) {
+        console.log(error)
+      });
+    },
     commentLongTap: function (e) {
       var that = this;
       wx.showModal({
@@ -435,6 +534,9 @@ Component({
                       leancloud_comment_data: that.data.leancloud_comment_data,
                       comment_num: that.data.leancloud_comment_data.length
                     })
+                    // 更新评论计数
+                    that.data.all_comment_num = that.data.all_comment_num - 1;
+                    that._writeCommentCountInLeanCloud();
                   }), function (error) {
                     // 删除评论对应赞失败
                     wx.showToast({
@@ -502,6 +604,10 @@ Component({
                       that.setData({
                         leancloud_comment_data: that.data.leancloud_comment_data
                       })
+                      // 更新评论计数
+                      that.data.all_comment_num = that.data.all_comment_num - 1;
+                      that._writeCommentCountInLeanCloud();
+
                       wx.showToast({
                         title: '删除子评论成功！',
                         icon: 'success',
@@ -756,7 +862,9 @@ Component({
       //console.log(that.data.login_user_info);
       wxsubcomment.set('p_id', that.data.sub_comment_p_comment_id)
       wxsubcomment.set('username', that.data.login_user_info.username);
-      wxsubcomment.set('article_id', that.data.comment_id);
+      wxsubcomment.set('article_id', that.data.article_id);
+      wxsubcomment.set('article_title', that.data.articleTitle);
+      wxsubcomment.set('article_url', that.data.articleURL);
       wxsubcomment.set('content', that.data.comment_data);
       wxsubcomment.set('time', current_time);
       wxsubcomment.set('at', '');
@@ -807,6 +915,10 @@ Component({
                 comment_data: '',
                 comment_textarea_value: ''
               });
+
+              that.data.all_comment_num = that.data.all_comment_num + 1;
+              // 更新评论计数
+              that._writeCommentCountInLeanCloud();
               console.log("评论和赞显示处理完毕");
             }, function (error) {
               // 异常处理
@@ -838,7 +950,9 @@ Component({
       const user = AV.User.current();
       //console.log(that.data.login_user_info);
       wxcomment.set('username', that.data.login_user_info.username);
-      wxcomment.set('article_id', that.data.comment_id);
+      wxcomment.set('article_id', that.data.article_id);
+      wxcomment.set('article_title', that.data.articleTitle);
+      wxcomment.set('article_url', that.data.articleURL);
       wxcomment.set('content', that.data.comment_data);
       wxcomment.set('time', current_time);
       wxcomment.set('at', '');
@@ -856,7 +970,7 @@ Component({
         zan.save().then(function (zan) {
           var targetZan = AV.Object.createWithoutData('Zan', zan.id);
           wxcomment.set('targetZan', targetZan);
-          wxcomment.save().then(function (wxcomment) {
+          wxcomment.save().then(function (wxcomment) {            
             // 评论和赞处理完毕
             // do something...
             // 同步更新评论显示
@@ -879,10 +993,13 @@ Component({
             that.data.leancloud_comment_data.push(current_comment);
             that.setData({
               leancloud_comment_data: that.data.leancloud_comment_data,
-              comment_num: that.data.comment_num + 1,
+              comment_num: that.data.comment_num + 1,             
               comment_data: '',
               comment_textarea_value: ''
             });
+            // 更新评论计数
+            that.data.all_comment_num = that.data.all_comment_num + 1;
+            that._writeCommentCountInLeanCloud();
             console.log("评论和赞处理完毕");
           }), function (error) {
             wx.showToast({
