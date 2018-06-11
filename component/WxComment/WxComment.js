@@ -234,6 +234,7 @@ Component({
                       leancloud_comment_data: that.data.leancloud_comment_data,
                       comment_num: that.data.leancloud_comment_data.length
                     });
+                    that._isAdmin();
                     return null;
                   }
                   // 当x为length时，return promiseFuncArr[x]()后，循环退出，
@@ -277,7 +278,8 @@ Component({
     login_user_info: [],
     leancloud_comment_data: [],
     leancloud_comment_zan_data: [],
-    article_views: 0
+    article_views: 0,
+    is_admin: false
   },
   methods: {
     // 事件响应函数
@@ -387,6 +389,33 @@ Component({
         scrollTop: 10000
       })
     },
+    _isAdmin: function() {
+      var that = this;
+      const user = AV.User.current();
+
+      var query = new AV.Query('Admin');
+      query.equalTo('adminId', user.id);
+      query.find().then(function (results) {
+        if(results.length >= 1) {
+          that.data.is_admin = true;
+          wx.showToast({
+            title: '欢迎Admin!',
+            icon: 'success',
+            duration: 2000
+          })
+        }
+      }, function(error) {
+        console.log(error)
+        // 101: 查询的 Class 不存在
+        if (error.code == 101) {
+          wx.showToast({
+            title: 'Admin Class不存在,请手动添加',
+            icon: 'none',
+            duration: 2000
+          })
+        }
+      })
+    },
     _writeCommentSubscribeInLeanCloud: function() {
       var that = this;
       // 评论订阅
@@ -472,7 +501,7 @@ Component({
             //console.log('用户点击确定')
             // 长按删除评论
             AV.User.loginWithWeapp().then(user => {
-              if (user.id == e.currentTarget.dataset.user_id) {
+              if (user.id == e.currentTarget.dataset.user_id || that.data.is_admin) {
                 // 如果该评论下有子评论
                 // 1.可以删除父评论和所有子评论？2.还是只能所以子评论删除完毕后才可以删除？
                 // Done 1
@@ -578,7 +607,7 @@ Component({
             //console.log('用户点击确定')
             // 长按删除评论
             AV.User.loginWithWeapp().then(user => {
-              if (user.id == e.currentTarget.dataset.user_id) {
+              if (user.id == e.currentTarget.dataset.user_id || that.data.is_admin) {
                 //console.log('当前登陆用户与待删除评论用户id相同');
                 var todo = new AV.Object.createWithoutData('WxSubComment', e.currentTarget.dataset.comment_id);
                 todo.destroy().then(function (success) {

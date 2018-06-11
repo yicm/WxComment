@@ -20,6 +20,7 @@
     - 关注后，可通过在WxComment组件外对用户详细资料查看等操作(见微信小程序`小白AI`)
 - 支持评论消息订阅功能
     - 评论指定文章或页面后，会自动订阅该文章或页面的评论，当有新的评论则可以实现消息更新，提示已有新的评论。
+- 支持配置Admin用户删除其他用户的评论
 
 
 # 屏幕截图
@@ -70,6 +71,13 @@ test.json
     "WxComment": "/component/WxComment/WxComment"
 }
 ```
+
+7. 配置Admin删除其他用户评论
+
+    - 登陆LeanCloud，进入应用->`存储`->`数据`->`创建Class`->创建`Admin` Class：
+
+![](https://raw.githubusercontent.com/yicm/WxComment/master/screenshot/admin.png)
+
 
 WxComment组件属性说明：
 
