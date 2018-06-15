@@ -401,7 +401,7 @@ Component({
           wx.showToast({
             title: '欢迎Admin!',
             icon: 'success',
-            duration: 2000
+            duration: 1000
           })
         }
       }, function(error) {
@@ -475,6 +475,7 @@ Component({
         if (results.length == 1) {
           var todo = AV.Object.createWithoutData('WxCommentCount', results[0].id);
           todo.set('count', that.data.all_comment_num);
+          todo.set('article_url', that.data.articleURL)
           todo.save().then(function(todo){
             that.data.comment_count_id = todo.id;
             // 更新用户评论订阅,count增加和减少都触发订阅
@@ -485,7 +486,17 @@ Component({
           console.log("WxCommentCount有重复ID");
         }
         else {
-          console.log("还未创建WxCommentCount对象")
+          console.log("还未创建WxCommentCount对象");
+          // TODO
+          // BUG: 会出现discovery_discovery_xxxid
+          // 初始化文章评论计数
+          var ArticleCommentCount = AV.Object.extend('WxCommentCount');
+          var articlecommentcount = new ArticleCommentCount();
+          articlecommentcount.set('article_id', that.data.articleID);
+          articlecommentcount.set('article_title', that.data.articleTitle);
+          articlecommentcount.set('article_url', that.data.articleURL);
+          articlecommentcount.set('count', 0);
+          articlecommentcount.save();
         }
       }, function (error) {
         console.log(error)
@@ -893,6 +904,7 @@ Component({
       wxsubcomment.set('username', that.data.login_user_info.username);
       wxsubcomment.set('article_id', that.data.article_id);
       wxsubcomment.set('article_title', that.data.articleTitle);
+      // article_url暂未用到
       wxsubcomment.set('article_url', that.data.articleURL);
       wxsubcomment.set('content', that.data.comment_data);
       wxsubcomment.set('time', current_time);
@@ -981,6 +993,7 @@ Component({
       wxcomment.set('username', that.data.login_user_info.username);
       wxcomment.set('article_id', that.data.article_id);
       wxcomment.set('article_title', that.data.articleTitle);
+      // article_url暂未用到
       wxcomment.set('article_url', that.data.articleURL);
       wxcomment.set('content', that.data.comment_data);
       wxcomment.set('time', current_time);
