@@ -46,7 +46,7 @@
         <view class="comment_content_box">
           <view class="comment_meta">
             <view class="comment_nickname">
-              <text>{{item.nickName}}</text>
+              <text>{{item.showNickName}}</text>
               <view class="commnet_date">
                 <text>{{item.time}}</text>
               </view>
@@ -77,7 +77,7 @@
             <view class="sub_comment_box">
               <view class="comment_meta">
                 <view class="comment_nickname">
-                  <text>{{sub_item.nickName}}</text>
+                  <text>{{sub_item.showNickName}}</text>
                   <view class="commnet_date">
                     <text>{{sub_item.time}}</text>
                   </view>

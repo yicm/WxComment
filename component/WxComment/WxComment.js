@@ -7,8 +7,8 @@ const AV = require('../../libs/leancloud/av-weapp-min.js');
 var Common = require('../../libs/scripts/common.js');
 // LeanCloud 应用的 ID 和 Key
 AV.init({
-  appId: 'your app id',
-  appKey: 'your app key',
+  appId: 'your appid',
+  appKey: 'your appkey',
 });
 
 Component({
@@ -171,6 +171,12 @@ Component({
               item['zanNum'] = results[i].attributes.targetZan.attributes.zan;
               item['articleID'] = results[i].attributes.article_id;
               item['nickName'] = results[i].attributes.targetUser.attributes.nickName;
+              if (item['nickName'].length > 12) {
+                item['showNickName'] = item['nickName'].substr(0, 12) + "...";
+              }
+              else {
+                item['showNickName'] = item['nickName'];
+              }
               item['pre_' + item['id']] = item['nickName'];
               item['avatarUrl'] = results[i].attributes.targetUser.attributes.avatarUrl;
               item['content'] = results[i].attributes.content;
@@ -218,6 +224,12 @@ Component({
                       sub_item['zanNum'] = sub_comments[k].attributes.targetZan.attributes.zan;
                       sub_item['articleID'] = sub_comments[k].attributes.article_id;
                       sub_item['nickName'] = sub_comments[k].attributes.targetUser.attributes.nickName;
+                      if (sub_item['nickName'].length > 12) {
+                        sub_item['showNickName'] = sub_item['nickName'].substr(0, 12) + "...";
+                      }
+                      else {
+                        sub_item['showNickName'] = sub_item['nickName'];
+                      }
                       sub_item['pre_' + sub_item['id']] = sub_item['nickName'];
                       sub_item['avatarUrl'] = sub_comments[k].attributes.targetUser.attributes.avatarUrl;
                       sub_item['content'] = sub_comments[k].attributes.content;
@@ -941,6 +953,12 @@ Component({
               current_comment['userId'] = user.id;
               current_comment['articleID'] = that.data.articleID;
               current_comment['nickName'] = that.data.login_user_info.nickName;
+              if (current_comment['nickName'].length > 12) {
+                current_comment['showNickName'] = current_comment['nickName'].substr(0, 12) + "...";
+              }
+              else {
+                current_comment['showNickName'] = current_comment['nickName'];
+              }
               current_comment['pre_' + current_comment['id']] = current_comment['nickName'];
               current_comment['avatarUrl'] = that.data.login_user_info.avatarUrl;
               current_comment['time'] = Common.timeAgoWithTimeStr(current_time);
@@ -1024,6 +1042,12 @@ Component({
             current_comment['userId'] = user.id;
             current_comment['articleID'] = that.data.articleID;
             current_comment['nickName'] = that.data.login_user_info.nickName;
+            if (current_comment['nickName'].length > 12) {
+              current_comment['showNickName'] = current_comment['nickName'].substr(0, 12) + "...";
+            }
+            else {
+              current_comment['showNickName'] = current_comment['nickName'];
+            }
             current_comment['pre_' + current_comment['id']] = current_comment['nickName'];
             current_comment['avatarUrl'] = that.data.login_user_info.avatarUrl;
             current_comment['time'] = Common.timeAgoWithTimeStr(current_time);
