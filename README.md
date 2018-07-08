@@ -61,7 +61,7 @@ test.wxml
 
 ```
 <view class="WxComment">
-  <WxComment tipOne="Markdown " tipTwo="will be supported, Powered by yicm." submitBtnText="回复" articleID="{{article_id}}" contentLen='1'></WxComment>
+  <WxComment tipOne="Markdown " tipTwo="will be supported, Powered by yicm." submitBtnText="回复" articleID="{{article_id}}" contentLen='1' theme="light"></WxComment>
 </view>
 ```
 
@@ -111,8 +111,4 @@ theme: 评论组件样式，支持light/dark两种样式，默认值为light
 # License
 
 [MIT](https://opensource.org/licenses/MIT)
-
-
-
-
 
