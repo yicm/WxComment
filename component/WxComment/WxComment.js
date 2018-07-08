@@ -7,8 +7,8 @@ const AV = require('../../libs/leancloud/av-weapp-min.js');
 var Common = require('../../libs/scripts/common.js');
 // LeanCloud 应用的 ID 和 Key
 AV.init({
-  appId: 'your appid',
-  appKey: 'your appkey',
+  appId: 'your app id',
+  appKey: 'your app key',
 });
 
 Component({
@@ -36,6 +36,10 @@ Component({
     articleURL: {
       type: String,
       value: ''
+    },
+    theme: {
+      type: String,
+      value: 'light' // light & dark
     },
     articleID: {
       type: String,
@@ -171,8 +175,8 @@ Component({
               item['zanNum'] = results[i].attributes.targetZan.attributes.zan;
               item['articleID'] = results[i].attributes.article_id;
               item['nickName'] = results[i].attributes.targetUser.attributes.nickName;
-              if (item['nickName'].length > 12) {
-                item['showNickName'] = item['nickName'].substr(0, 12) + "...";
+              if (item['nickName'].length > that.data.comment_nickname_len) {
+                item['showNickName'] = item['nickName'].substr(0, that.data.comment_nickname_len) + "...";
               }
               else {
                 item['showNickName'] = item['nickName'];
@@ -224,8 +228,8 @@ Component({
                       sub_item['zanNum'] = sub_comments[k].attributes.targetZan.attributes.zan;
                       sub_item['articleID'] = sub_comments[k].attributes.article_id;
                       sub_item['nickName'] = sub_comments[k].attributes.targetUser.attributes.nickName;
-                      if (sub_item['nickName'].length > 12) {
-                        sub_item['showNickName'] = sub_item['nickName'].substr(0, 12) + "...";
+                      if (sub_item['nickName'].length > that.data.subcomment_nickname_len) {
+                        sub_item['showNickName'] = sub_item['nickName'].substr(0, that.data.subcomment_nickname_len) + "...";
                       }
                       else {
                         sub_item['showNickName'] = sub_item['nickName'];
@@ -291,7 +295,9 @@ Component({
     leancloud_comment_data: [],
     leancloud_comment_zan_data: [],
     article_views: 0,
-    is_admin: false
+    is_admin: false,
+    comment_nickname_len: 12,
+    subcomment_nickname_len: 10
   },
   methods: {
     // 事件响应函数
@@ -953,8 +959,8 @@ Component({
               current_comment['userId'] = user.id;
               current_comment['articleID'] = that.data.articleID;
               current_comment['nickName'] = that.data.login_user_info.nickName;
-              if (current_comment['nickName'].length > 12) {
-                current_comment['showNickName'] = current_comment['nickName'].substr(0, 12) + "...";
+              if (current_comment['nickName'].length > that.data.subcomment_nickname_len) {
+                current_comment['showNickName'] = current_comment['nickName'].substr(0, that.data.subcomment_nickname_len) + "...";
               }
               else {
                 current_comment['showNickName'] = current_comment['nickName'];
@@ -1042,8 +1048,8 @@ Component({
             current_comment['userId'] = user.id;
             current_comment['articleID'] = that.data.articleID;
             current_comment['nickName'] = that.data.login_user_info.nickName;
-            if (current_comment['nickName'].length > 12) {
-              current_comment['showNickName'] = current_comment['nickName'].substr(0, 12) + "...";
+            if (current_comment['nickName'].length > that.data.comment_nickname_len) {
+              current_comment['showNickName'] = current_comment['nickName'].substr(0, that.data.comment_nickname_len) + "...";
             }
             else {
               current_comment['showNickName'] = current_comment['nickName'];

@@ -1,3 +1,5 @@
+<view class="{{theme=='dark'?'theme_dark': ''}}">
+
 <view class="views_box">
   <view class="views_title_display">
     <view class="views_image">
@@ -142,4 +144,6 @@
       </view>
     </view>
   </form>
+</view>
+
 </view>

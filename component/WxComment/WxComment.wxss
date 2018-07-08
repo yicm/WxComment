@@ -7,6 +7,11 @@ image {
   height: auto;
 }
 
+.theme_dark{
+  background-color: black;
+  color: white;
+}
+
 .hide {
   display: none;
 }
