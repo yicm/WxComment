@@ -61,7 +61,7 @@ test.wxml
 
 ```
 <view class="WxComment">
-  <WxComment tipOne="Markdown " tipTwo="will be supported, Powered by yicm." submitBtnText="回复" articleID="{{article_id}}" contentLen='1' theme="light"></WxComment>
+  <WxComment tipOne="WxComment " tipTwo="Powered by https://github.com/yicm" submitBtnText="回复" articleID="{{your_article_id}}" contentLen='1' theme="light"></WxComment>
 </view>
 ```
 

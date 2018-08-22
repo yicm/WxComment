@@ -15,11 +15,11 @@ Component({
   properties: {
     tipOne: {
       type: String,
-      value: 'Markdown'
+      value: 'WxComment '
     },
     tipTwo: {
       type: String,
-      value: 'will be supported, Powered by yicm.'
+      value: 'Powered by https://github.com/yicm'
     },
     submitBtnText: {
       type: String,
@@ -90,7 +90,7 @@ Component({
               console.log(error);
             });
           }
-          else if (results.length == 0) {            
+          else if (results.length == 0) {
             // 初始化文章统计对象
             var ArticleCount = AV.Object.extend('Count');
             var articlecount = new ArticleCount();
@@ -278,7 +278,7 @@ Component({
       value: 1
     }
   },
-  data: {    
+  data: {
     textarea_focus: false,
     is_sub_comment: false,
     sub_comment_p_comment_id: '',
@@ -451,7 +451,7 @@ Component({
             // 异常处理
             console.error(error);
           });
-        } 
+        }
         else if(results.length > 1){
           console.log('WxCommentSubscribe ID重复')
         }
@@ -498,7 +498,7 @@ Component({
             that.data.comment_count_id = todo.id;
             // 更新用户评论订阅,count增加和减少都触发订阅
             that._writeCommentSubscribeInLeanCloud();
-          }) 
+          })
         }
         else if (results.length > 1) {
           console.log("WxCommentCount有重复ID");
@@ -709,7 +709,7 @@ Component({
     },
     _updateZanShow: function (mode, comment_id, is_sub_comment, p_index) {
       var that = this;
-      
+
       if (is_sub_comment == "true") {
         for (var i = 0; i < that.data.leancloud_comment_data[p_index].subCommentList.length; i++) {
           if (that.data.leancloud_comment_data[p_index].subCommentList[i].id == comment_id) {
@@ -748,7 +748,7 @@ Component({
       query.equalTo('commentObjId', comment_id);
       query.containsAll('userList', search);
       query.find().then(function (results) {
-        //console.log(results);      
+        //console.log(results);
         if (results.length == 1) {
           // 当前用户已给该评论点赞，取消赞
           var op_str = "update " + class_name + " set zan=op('Decrement', {'amount': 1}),userList=op('Remove', {'objects':[\"" + that.data.leancloud_user_id + "\"]}) where objectId='" + zan_id + "'";
@@ -1036,7 +1036,7 @@ Component({
         zan.save().then(function (zan) {
           var targetZan = AV.Object.createWithoutData('Zan', zan.id);
           wxcomment.set('targetZan', targetZan);
-          wxcomment.save().then(function (wxcomment) {            
+          wxcomment.save().then(function (wxcomment) {
             // 评论和赞处理完毕
             // do something...
             // 同步更新评论显示
@@ -1065,7 +1065,7 @@ Component({
             that.data.leancloud_comment_data.push(current_comment);
             that.setData({
               leancloud_comment_data: that.data.leancloud_comment_data,
-              comment_num: that.data.comment_num + 1,             
+              comment_num: that.data.comment_num + 1,
               comment_data: '',
               comment_textarea_value: ''
             });
